@@ -1,21 +1,59 @@
-import React from "react";
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext"; // Changed import
 import Donate from "../assets/donate1.jpg";
 
-const register: React.FC = () => {
+const Register: React.FC = () => {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [userType, setUserType] = useState<'restaurant' | 'organization'>('restaurant');
+  const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  // const [loading, setLoading] = useState(false); // isLoading from useAuth
+  const navigate = useNavigate();
+  const { register, isLoading } = useAuth(); // Use context
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError(null);
+    setSuccessMessage(null);
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+    // setLoading(true); // Handled by useAuth's isLoading
+
+    try {
+      await register(name, email, password, userType); // Use register from context
+      setSuccessMessage("Registration successful! Please log in.");
+      setTimeout(() => {
+        navigate("/login");
+      }, 2000); 
+    } catch (err: any) {
+      setError(err.message || "Failed to register. Please try again.");
+    } 
+    // finally { // Handled by useAuth's isLoading
+    //   setLoading(false);
+    // }
+  };
+
   return (
     <>
       <section className="bg-slate-300">
         <div className="lg:grid lg:min-h-screen lg:grid-cols-12">
           <section className="relative flex h-32 items-end bg-gray-900 lg:col-span-5 lg:h-full xl:col-span-6">
             <img
-              alt=""
+              alt="Donation" // Added alt text
               src={Donate}
               className="absolute inset-0 h-full w-full object-cover opacity-80"
             />
-
             <div className="hidden lg:relative lg:block lg:p-12">
-              <a className="block text-white" href="#">
+              <Link className="block text-white" to="/">
                 <span className="sr-only">Home</span>
+                {/* SVG remains the same */}
                 <svg
                   className="h-8 sm:h-10"
                   viewBox="0 0 28 24"
@@ -27,24 +65,25 @@ const register: React.FC = () => {
                     fill="currentColor"
                   />
                 </svg>
-              </a>
-
+              </Link>
               <h2 className="mt-6 text-2xl font-bold text-white sm:text-3xl md:text-4xl">
                 Welcome to FoodForward
               </h2>
-
-              <p className="mt-4 leading-relaxed text-white/90"></p>
+              <p className="mt-4 leading-relaxed text-white/90">
+                Join our community to help reduce food waste and support those in need.
+              </p>
             </div>
           </section>
 
           <main className="flex items-center justify-center px-8 py-8 sm:px-12 lg:col-span-7 lg:px-16 lg:py-12 xl:col-span-6">
             <div className="max-w-xl lg:max-w-3xl">
               <div className="relative -mt-16 block lg:hidden">
-                <a
+                <Link
                   className="inline-flex size-16 items-center justify-center rounded-full bg-white text-blue-600 sm:size-20"
-                  href="#"
+                  to="/"
                 >
                   <span className="sr-only">Home</span>
+                  {/* SVG remains the same */}
                   <svg
                     className="h-8 sm:h-10"
                     viewBox="0 0 28 24"
@@ -56,47 +95,41 @@ const register: React.FC = () => {
                       fill="currentColor"
                     />
                   </svg>
-                </a>
-
+                </Link>
                 <h1 className="mt-2 text-2xl font-bold text-gray-900 sm:text-3xl md:text-4xl">
-                  Welcome to Squid 🦑
+                  Create Your Account
                 </h1>
-
                 <p className="mt-4 leading-relaxed text-gray-500">
-                  Lorem, ipsum dolor sit amet consectetur adipisicing elit.
-                  Eligendi nam dolorum aliquam, quibusdam aperiam voluptatum.
+                  Fill in the details below to get started.
                 </p>
               </div>
 
-              <form action="#" className="mt-8 grid grid-cols-6 gap-6">
-                <div className="col-span-6 sm:col-span-3">
-                  <label
-                    htmlFor="FirstName"
-                    className="block text-sm font-medium text-gray-700"
-                  >
-                    First Name
-                  </label>
-
-                  <input
-                    type="text"
-                    id="FirstName"
-                    name="first_name"
-                    className="mt-1 h-10 w-full rounded-md border-gray-200 bg-white text-sm text-gray-700 shadow-sm"
-                  />
+              {error && (
+                <div className="mt-4 p-4 bg-red-100 text-red-700 rounded-md">
+                  {error}
                 </div>
+              )}
+              {successMessage && (
+                <div className="mt-4 p-4 bg-green-100 text-green-700 rounded-md">
+                  {successMessage}
+                </div>
+              )}
 
-                <div className="col-span-6 sm:col-span-3">
+              <form onSubmit={handleSubmit} className="mt-8 grid grid-cols-6 gap-6">
+                <div className="col-span-6">
                   <label
-                    htmlFor="LastName"
+                    htmlFor="Name"
                     className="block text-sm font-medium text-gray-700"
                   >
-                    Last Name
+                    Full Name / Organization Name
                   </label>
-
                   <input
                     type="text"
-                    id="LastName"
-                    name="last_name"
+                    id="Name"
+                    name="name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    required
                     className="mt-1 h-10 w-full rounded-md border-gray-200 bg-white text-sm text-gray-700 shadow-sm"
                   />
                 </div>
@@ -106,14 +139,15 @@ const register: React.FC = () => {
                     htmlFor="Email"
                     className="block text-sm font-medium text-gray-700"
                   >
-                    {" "}
-                    Email{" "}
+                    Email
                   </label>
-
                   <input
                     type="email"
                     id="Email"
                     name="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
                     className="mt-1 h-10 w-full rounded-md border-gray-200 bg-white text-sm text-gray-700 shadow-sm"
                   />
                 </div>
@@ -123,14 +157,15 @@ const register: React.FC = () => {
                     htmlFor="Password"
                     className="block text-sm font-medium text-gray-700"
                   >
-                    {" "}
-                    Password{" "}
+                    Password
                   </label>
-
                   <input
                     type="password"
                     id="Password"
                     name="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
                     className="mt-1 h-10 w-full rounded-md border-gray-200 bg-white text-sm text-gray-700 shadow-sm"
                   />
                 </div>
@@ -140,27 +175,51 @@ const register: React.FC = () => {
                     htmlFor="PasswordConfirmation"
                     className="block text-sm font-medium text-gray-700"
                   >
-                    Password Confirmation
+                    Confirm Password
                   </label>
-
                   <input
                     type="password"
                     id="PasswordConfirmation"
                     name="password_confirmation"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
                     className="mt-1 h-10 w-full rounded-md border-gray-200 bg-white text-sm text-gray-700 shadow-sm"
                   />
                 </div>
 
+                 <div className="col-span-6">
+                  <label htmlFor="UserType" className="block text-sm font-medium text-gray-700">
+                    I am a...
+                  </label>
+                  <select
+                    id="UserType"
+                    name="userType"
+                    value={userType}
+                    onChange={(e) => setUserType(e.target.value as 'restaurant' | 'organization')}
+                    required
+                    className="mt-1 h-10 w-full rounded-md border-gray-200 bg-white text-sm text-gray-700 shadow-sm"
+                  >
+                    <option value="restaurant">Restaurant</option>
+                    <option value="organization">Organization</option>
+                  </select>
+                </div>
+
+
                 <div className="col-span-6 sm:flex sm:items-center sm:gap-4">
-                  <button className="inline-block shrink-0 rounded-md border border-blue-600 bg-blue-600 px-12 py-3 text-sm font-medium text-white transition hover:bg-transparent hover:text-blue-600 focus:outline-none focus:ring active:text-blue-500">
-                    Create an account
+                  <button
+                    type="submit"
+                    disabled={isLoading} // Use isLoading from context
+                    className="inline-block shrink-0 rounded-md border border-blue-600 bg-blue-600 px-12 py-3 text-sm font-medium text-white transition hover:bg-transparent hover:text-blue-600 focus:outline-none focus:ring active:text-blue-500 disabled:opacity-50"
+                  >
+                    {isLoading ? "Creating account..." : "Create an account"}
                   </button>
 
                   <p className="mt-4 text-sm text-gray-500 sm:mt-0">
                     Already have an account?
-                    <a href="#" className="text-gray-700 underline">
+                    <Link to="/login" className="text-gray-700 underline ml-1">
                       Log in
-                    </a>
+                    </Link>
                     .
                   </p>
                 </div>
@@ -173,4 +232,4 @@ const register: React.FC = () => {
   );
 };
 
-export default register;
+export default Register;
